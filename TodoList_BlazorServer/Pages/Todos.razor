@@ -1,0 +1,90 @@
+﻿@page "/todos"
+@inject IMatToaster Toaster
+@using TodoList_BlazorServer.Data
+
+
+<h1>Todo Manager App</h1>
+
+<div class="row">
+    <div class="col-md-4">
+        <MatTextField @bind-Value="@myTodoText" Label="Add todo task here"></MatTextField>
+    </div>
+    <div class="col-md-4">
+        <MatDatePicker @bind-Value="@myDeadline"></MatDatePicker>
+    </div>
+    <MatButton Raised="true" Icon="playlist_add" OnClick="@Click">Add Todo</MatButton>
+</div>
+
+@if (TodoList != null)
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Ready?</th>
+                <th>Description</th>
+                <th>Deadline</th>
+                <th>Complete</th>
+                <th>Delete</th>
+
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var td in TodoList)
+            {
+            <tr>
+                <td>
+                    <MatCheckbox @bind-Value="@td.IsCompleted" Disabled="true"></MatCheckbox>
+                </td>
+                <td>@td.Todo</td>
+                <td>@td.Deadline.ToShortDateString()</td>
+                <td><MatButton Icon="done" Outlined="true" @onclick="@(e=> completeItem(td.Id))">Complete</MatButton></td>
+                <td><MatButton Icon="delete" Outlined="true" @onclick="@(e=> deleteItem(td.Id))">Delete</MatButton></td>
+
+            </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<TodoModel> TodoList = new List<TodoModel>();
+    string myTodoText = null;
+    DateTime? myDeadline;
+
+
+    private void Click(MouseEventArgs e)
+    {
+        if (myTodoText != null)
+        {
+
+            var myTodoItem = new TodoModel()
+            {
+                Id = TodoList.Count() + 1,
+                Deadline = myDeadline == null ? DateTime.Now : ((DateTime)myDeadline).AddDays(1),
+                Todo = myTodoText,
+                IsCompleted = false
+            };
+            TodoList.Add(myTodoItem);
+            myTodoText = null;
+            myDeadline = null;
+        }
+        else
+        {
+            Console.WriteLine("no text");
+            Toaster.Add("Cannot add empty values", MatToastType.Warning, "Todo List", null);
+        }
+        
+    }
+
+    void deleteItem(int id)
+    {
+        var myTodo = TodoList.FirstOrDefault(x => x.Id == id);
+        TodoList.Remove(myTodo);
+    }
+
+    void completeItem(int id)
+    {
+        var myTodo = TodoList.FirstOrDefault(x => x.Id == id);
+        myTodo.IsCompleted = !myTodo.IsCompleted;
+    }
+}
