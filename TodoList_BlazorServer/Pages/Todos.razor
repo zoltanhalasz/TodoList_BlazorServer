@@ -12,10 +12,12 @@
     <div class="col-md-4">
         <MatDatePicker @bind-Value="@myDeadline"></MatDatePicker>
     </div>
-    <MatButton Raised="true" Icon="playlist_add" OnClick="@Click">Add Todo</MatButton>
+    <div class="col-md-4">
+        <MatButton Raised="true" Icon="playlist_add" OnClick="@Click">Add Todo</MatButton>
+    </div>
 </div>
 
-@if (TodoList != null)
+@if (TodoList != null && TodoList.Count>0)
 {
     <table class="table">
         <thead>
@@ -25,7 +27,7 @@
                 <th>Deadline</th>
                 <th>Complete</th>
                 <th>Delete</th>
-
+                <th>Edit</th>
             </tr>
         </thead>
         <tbody>
@@ -39,7 +41,7 @@
                 <td>@td.Deadline.ToShortDateString()</td>
                 <td><MatButton Icon="done" Outlined="true" @onclick="@(e=> completeItem(td.Id))">Complete</MatButton></td>
                 <td><MatButton Icon="delete" Outlined="true" @onclick="@(e=> deleteItem(td.Id))">Delete</MatButton></td>
-
+                <td><MatButton Icon="edit" Outlined="true" @onclick="@(e=> editItem(td.Id))">Edit</MatButton></td>
             </tr>
             }
         </tbody>
@@ -50,41 +52,64 @@
     private List<TodoModel> TodoList = new List<TodoModel>();
     string myTodoText = null;
     DateTime? myDeadline;
+    int editedID = 0;
 
 
     private void Click(MouseEventArgs e)
     {
-        if (myTodoText != null)
+        if (myTodoText == null)
         {
+            Toaster.Add("Cannot add empty values", MatToastType.Warning, "Todo List", null);
+            return;
+        }
 
+        if (editedID == 0)
+        {              
             var myTodoItem = new TodoModel()
             {
                 Id = TodoList.Count() + 1,
-                Deadline = myDeadline == null ? DateTime.Now : ((DateTime)myDeadline).AddDays(1),
+                Deadline = myDeadline == null ? DateTime.Now.AddDays(1) : ((DateTime)myDeadline),
                 Todo = myTodoText,
                 IsCompleted = false
             };
             TodoList.Add(myTodoItem);
             myTodoText = null;
             myDeadline = null;
+            Toaster.Add("New todo added.", MatToastType.Info, "Todo List", null);
         }
         else
         {
-            Console.WriteLine("no text");
-            Toaster.Add("Cannot add empty values", MatToastType.Warning, "Todo List", null);
+            var myTodo = TodoList.FirstOrDefault(x => x.Id == editedID);
+            myTodo.Todo = myTodoText;
+            myTodo.Deadline = myDeadline == null ? DateTime.Now.AddDays(1) : ((DateTime)myDeadline);
+            
+            myTodoText = null;
+            myDeadline = null;
+            Toaster.Add("Todo edit finished.", MatToastType.Info, "Todo List", null);
+            editedID = 0;
         }
-        
+
     }
 
     void deleteItem(int id)
     {
         var myTodo = TodoList.FirstOrDefault(x => x.Id == id);
         TodoList.Remove(myTodo);
+        Toaster.Add("Todo removed.", MatToastType.Info, "Todo List", null);
     }
 
     void completeItem(int id)
     {
         var myTodo = TodoList.FirstOrDefault(x => x.Id == id);
         myTodo.IsCompleted = !myTodo.IsCompleted;
+        Toaster.Add("Todo status changed.", MatToastType.Info, "Todo List", null);
+    }
+
+    void editItem(int id)
+    {
+        var myTodo = TodoList.FirstOrDefault(x => x.Id == id);
+        myTodoText = myTodo.Todo;
+        myDeadline = myTodo.Deadline;
+        editedID = id;
     }
 }
